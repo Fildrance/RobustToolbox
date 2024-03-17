@@ -132,15 +132,6 @@ public interface IRobustRandom
     /// <summary> Randomly switches positions in collection. </summary>
     void Shuffle<T>(ValueList<T> list);
 
-    /// <summary> Get random item from collection. </summary>
-    T GetItem<T>(IList<T> collection);
-
-    /// <summary> Get random item from collection. </summary>
-    T GetItem<T>(ValueList<T> list);
-
-    /// <summary> Get random item from collection. </summary>
-    T GetItem<T>(Span<T> span);
-
     /// <summary>
     /// Get set amount of random items from collection.
     /// If <paramref name="allowDuplicates"/> is false and <paramref name="collection"/>

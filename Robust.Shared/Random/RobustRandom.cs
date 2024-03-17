@@ -95,27 +95,6 @@ public sealed class RobustRandom : IRobustRandom
     }
 
     /// <inheritdoc />
-    public T GetItem<T>(IList<T> collection)
-    {
-        var index = Next(collection.Count - 1);
-        return collection[index];
-    }
-
-    /// <inheritdoc />
-    public T GetItem<T>(ValueList<T> list)
-    {
-        var index = Next(list.Count - 1);
-        return list[index];
-    }
-
-    /// <inheritdoc />
-    public T GetItem<T>(Span<T> span)
-    {
-        var index = Next(span.Length - 1);
-        return span[index];
-    }
-
-    /// <inheritdoc />
     public IReadOnlyCollection<T> GetItems<T>(IList<T> collection, int count, bool allowDuplicates = true)
     {
         if (collection.Count == 0 || count <= 0)
