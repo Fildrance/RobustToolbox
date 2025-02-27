@@ -43,7 +43,9 @@ public sealed partial class FormattedMessage
     /// <exception cref="ParseException">Thrown when an error occurs while trying to parse the markup.</exception>
     public void AddMarkupOrThrow(string markup)
     {
-        _nodes.AddRange(ParseOrThrow(markup));
+        var markupNodes = ParseOrThrow(markup);
+        ValidateOrder(markupNodes);
+        _nodes.AddRange(markupNodes);
     }
 
     /// <summary>
@@ -86,6 +88,8 @@ public sealed partial class FormattedMessage
         var result = ParseNodes.Parse(input);
         if (result.Success)
         {
+            ValidateOrder(result.Value);
+
             nodes = result.Value;
             error = null;
             return true;
@@ -94,6 +98,44 @@ public sealed partial class FormattedMessage
         error = result.Error!.RenderErrorMessage();
         nodes = null;
         return false;
+    }
+
+    private static void ValidateOrder(List<MarkupNode> resultValue)
+    {
+        Span<int> stack = stackalloc int[resultValue.Count];
+
+        int depth = 0;
+        foreach (var markupNode in resultValue)
+        {
+            if (markupNode.Name == null)
+            {
+                continue;
+            }
+
+            var nodeNameHash = markupNode.Name.GetHashCode();
+            if (markupNode.Closing)
+            {
+                if (depth == 0)
+                {
+                    throw new InvalidOperationException();
+                }
+
+                if (stack[depth - 1] == nodeNameHash)
+                {
+                    depth--;
+                }
+                else
+                {
+                    throw new InvalidOperationException();
+                }
+            }
+            else
+            {
+                stack[depth] = nodeNameHash;
+                depth++;
+            }
+
+        }
     }
 
     /// <summary>
