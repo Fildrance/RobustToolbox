@@ -102,9 +102,8 @@ public sealed partial class FormattedMessage
 
     private static void ValidateOrder(List<MarkupNode> resultValue)
     {
-        Span<int> stack = stackalloc int[resultValue.Count];
+        var stack = new Stack<string>(4);
 
-        int depth = 0;
         foreach (var markupNode in resultValue)
         {
             if (markupNode.Name == null)
@@ -112,29 +111,22 @@ public sealed partial class FormattedMessage
                 continue;
             }
 
-            var nodeNameHash = markupNode.Name.GetHashCode();
             if (markupNode.Closing)
             {
-                if (depth == 0)
+                if (stack.Count == 0)
                 {
                     throw new InvalidOperationException();
                 }
 
-                if (stack[depth - 1] == nodeNameHash)
-                {
-                    depth--;
-                }
-                else
+                if (stack.Pop() != markupNode.Name)
                 {
                     throw new InvalidOperationException();
                 }
             }
             else
             {
-                stack[depth] = nodeNameHash;
-                depth++;
+                stack.Push(markupNode.Name);
             }
-
         }
     }
 
