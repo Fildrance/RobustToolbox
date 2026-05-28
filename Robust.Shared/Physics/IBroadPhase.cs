@@ -6,6 +6,7 @@ using Robust.Shared.Physics.Dynamics;
 
 namespace Robust.Shared.Physics;
 
+[NotContentImplementable]
 public interface IBroadPhase
 {
     int Count { get; }
@@ -16,7 +17,7 @@ public interface IBroadPhase
 
     DynamicTree.Proxy AddProxy(ref FixtureProxy proxy);
 
-    bool MoveProxy(DynamicTree.Proxy proxyId, in Box2 aabb, Vector2 displacement);
+    void MoveProxy(DynamicTree.Proxy proxyId, in Box2 aabb);
 
     FixtureProxy? GetProxy(DynamicTree.Proxy proxy);
 
@@ -54,8 +55,14 @@ public interface IBroadPhase
         DynamicTree<FixtureProxy>.RayQueryCallbackDelegate<TState> callback,
         in Ray ray,
         bool approx = false);
+
+    void Rebuild(bool fullBuild);
+
+
+    void RebuildBottomUp();
 }
 
+[NotContentImplementable]
 public interface IBroadPhase<T> : ICollection<T> where T : notnull {
 
     int Capacity { get; }

@@ -25,8 +25,8 @@ public sealed partial class RayCastSystem : EntitySystem
      * - If you wish to add more helper methods make a new partial and dump them there and have them call the below methods.
      */
 
-    [Dependency] private readonly SharedBroadphaseSystem _broadphase = default!;
-    [Dependency] private readonly SharedPhysicsSystem _physics = default!;
+    [Dependency] private SharedBroadphaseSystem _broadphase = default!;
+    [Dependency] private SharedPhysicsSystem _physics = default!;
 
     private readonly RayComparer _rayComparer = new();
 
@@ -274,6 +274,9 @@ public sealed partial class RayCastSystem : EntitySystem
         {
             case PhysShapeCircle circle:
                 CastCircle(entity, ref result, circle, originTransform, translation, filter, callback);
+                break;
+            case SlimPolygon slim:
+                CastPolygon(entity, ref result, new PolygonShape(slim), originTransform, translation, filter, callback);
                 break;
             case Polygon poly:
                 CastPolygon(entity, ref result, new PolygonShape(poly), originTransform, translation, filter, callback);

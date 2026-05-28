@@ -6,9 +6,9 @@ using Robust.Shared.Physics.Systems;
 
 namespace Robust.Shared.GameObjects
 {
-    public sealed class CollisionWakeSystem : EntitySystem
+    public sealed partial class CollisionWakeSystem : EntitySystem
     {
-        [Dependency] private readonly SharedPhysicsSystem _physics = default!;
+        [Dependency] private SharedPhysicsSystem _physics = default!;
         private EntityQuery<CollisionWakeComponent> _query;
 
         public override void Initialize()
@@ -96,6 +96,7 @@ namespace Robust.Shared.GameObjects
 
             // If we're attached to the map we'll also just never disable collision due to how grid movement works.
             var canCollide = body.Awake ||
+                             body.ContactCount > 0 ||
                               (TryComp(uid, out JointComponent? jointComponent) && jointComponent.JointCount > 0) ||
                               xform.GridUid == null;
 
