@@ -204,7 +204,7 @@ namespace Robust.Shared.Tests.Utility
         }
 
         [Test]
-        public static void TestInsertAroundMessage_InsertPlanText_Throws()
+        public static void TestInsertAroundMessage_InsertPlainText_Throws()
         {
             var message = FormattedMessage.FromMarkupOrThrow("Foo[color=red] bar [/color] bar baz");
 

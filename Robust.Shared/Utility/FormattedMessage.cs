@@ -410,10 +410,10 @@ public sealed partial class FormattedMessage : IEquatable<FormattedMessage>, IRe
     /// Helper function that inserts a node before each opening tag of a specific type.
     /// </summary>
     /// <param name="markupNode">The node to be inserted.</param>
-    /// <param name="tagText">The tag to search for.</param>
-    public void InsertBeforeTag(MarkupNode markupNode, string tagText)
+    /// <param name="tagName">The tag to search for.</param>
+    public void InsertBeforeTag(MarkupNode markupNode, string tagName)
     {
-        var i = _nodes.FindIndex(x => x.Name == tagText && !x.Closing);
+        var i = _nodes.FindIndex(x => x.Name == tagName && !x.Closing);
 
         while (i != -1)
         {
@@ -424,7 +424,7 @@ public sealed partial class FormattedMessage : IEquatable<FormattedMessage>, IRe
 
             // we add 2 new elements and want to skip 1 element we found previously
             const int offset = 3;
-            i = _nodes.FindIndex(i + offset, x => x.Name == tagText && !x.Closing);
+            i = _nodes.FindIndex(i + offset, x => x.Name == tagName && !x.Closing);
         }
     }
 
@@ -432,10 +432,10 @@ public sealed partial class FormattedMessage : IEquatable<FormattedMessage>, IRe
     /// Helper function that inserts a node after each closing tags of a specific type.
     /// </summary>
     /// <param name="markupNode">The node to be inserted.</param>
-    /// <param name="tagText">The tag to search for.</param>
-    public void InsertAfterTag(MarkupNode markupNode, string tagText)
+    /// <param name="tagName">The tag to search for.</param>
+    public void InsertAfterTag(MarkupNode markupNode, string tagName)
     {
-        var i = _nodes.FindIndex(x => x.Name == tagText && x.Closing);
+        var i = _nodes.FindIndex(x => x.Name == tagName && x.Closing);
 
         while (i != -1)
         {
@@ -447,7 +447,7 @@ public sealed partial class FormattedMessage : IEquatable<FormattedMessage>, IRe
             // standing on closing node (which we want to skip)
             // we add 2 nodes (second one is closing node which we want to skip too)
             const int offset = 3;
-            i = _nodes.FindIndex(i + offset, x => x.Name == tagText && x.Closing);
+            i = _nodes.FindIndex(i + offset, x => x.Name == tagName && x.Closing);
         }
     }
 
@@ -456,8 +456,8 @@ public sealed partial class FormattedMessage : IEquatable<FormattedMessage>, IRe
     /// The new node encloses any other nodes that the target node encloses.
     /// </summary>
     /// <param name="markupNode">The node to be inserted; may not be a text node.</param>
-    /// <param name="tagText">The tag to search for.</param>
-    public void InsertInsideTag(MarkupNode markupNode, string tagText)
+    /// <param name="tagName">The tag to search for.</param>
+    public void InsertInsideTag(MarkupNode markupNode, string tagName)
     {
         if (markupNode.Name == null)
         {
@@ -468,13 +468,13 @@ public sealed partial class FormattedMessage : IEquatable<FormattedMessage>, IRe
             );
         }
 
-        var openingNodeCount = _nodes.Count(x => x.Name == tagText && !x.Closing);
-        var closingNodeCount = _nodes.Count(x => x.Name == tagText && x.Closing);
+        var openingNodeCount = _nodes.Count(x => x.Name == tagName && !x.Closing);
+        var closingNodeCount = _nodes.Count(x => x.Name == tagName && x.Closing);
 
         if (openingNodeCount != closingNodeCount)
         {
             throw new InvalidOperationException(
-                $"Opening and Closing node count with name '{tagText}' mismatch, FormattedMessage is in " +
+                $"Opening and Closing node count with name '{tagName}' mismatch, FormattedMessage is in " +
                 "invalid state - cannot manipulate use tags nesting api."
             );
         }
@@ -486,7 +486,7 @@ public sealed partial class FormattedMessage : IEquatable<FormattedMessage>, IRe
         while (i < _nodes.Count)
         {
             var node = _nodes[i];
-            if (node.Name != tagText)
+            if (node.Name != tagName)
             {
                 i++;
                 continue;
@@ -505,8 +505,8 @@ public sealed partial class FormattedMessage : IEquatable<FormattedMessage>, IRe
     /// Helper function that wraps a node around other nodes of a specific type.
     /// </summary>
     /// <param name="markupNode">The node to be inserted; may not be a text node.</param>
-    /// <param name="tagText">The tag to search for.</param>
-    public void InsertOutsideTag(MarkupNode markupNode, string tagText)
+    /// <param name="tagName">The tag to search for.</param>
+    public void InsertOutsideTag(MarkupNode markupNode, string tagName)
     {
         if (markupNode.Name == null)
         {
@@ -517,13 +517,13 @@ public sealed partial class FormattedMessage : IEquatable<FormattedMessage>, IRe
             );
         }
 
-        var openingNodeCount = _nodes.Count(x => x.Name == tagText && !x.Closing);
-        var closingNodeCount = _nodes.Count(x => x.Name == tagText && x.Closing);
+        var openingNodeCount = _nodes.Count(x => x.Name == tagName && !x.Closing);
+        var closingNodeCount = _nodes.Count(x => x.Name == tagName && x.Closing);
 
         if (openingNodeCount != closingNodeCount)
         {
             throw new InvalidOperationException(
-                $"Opening and Closing node count with name '{tagText}' mismatch, FormattedMessage is in " +
+                $"Opening and Closing node count with name '{tagName}' mismatch, FormattedMessage is in " +
                 "invalid state - cannot manipulate use tags nesting api."
             );
         }
@@ -535,7 +535,7 @@ public sealed partial class FormattedMessage : IEquatable<FormattedMessage>, IRe
         while (i < _nodes.Count)
         {
             var node = _nodes[i];
-            if (node.Name != tagText)
+            if (node.Name != tagName)
             {
                 i++;
                 continue;
@@ -573,12 +573,13 @@ public sealed partial class FormattedMessage : IEquatable<FormattedMessage>, IRe
     /// a FormattedMessage containing the found node with all nodes, nested inside.
     /// </summary>
     /// <param name="result">The message with all markup nodes inside chosen tag.</param>
-    /// <param name="tagText">The tag to search for.</param>
-    public bool TryGetMessageInsideTag(string tagText, out FormattedMessage? result)
+    /// <param name="tagName">The tag to search for.</param>
+    /// <returns>True when tag with passed name was found and it was not empty, false otherwise.</returns>
+    public bool TryGetMessageInsideTag(string tagName, [NotNullWhen(true)] out FormattedMessage? result)
     {
         result = null;
         
-        var openingNodeIndex = _nodes.FindIndex(x => x.Name == tagText && !x.Closing);
+        var openingNodeIndex = _nodes.FindIndex(x => x.Name == tagName && !x.Closing);
         var currentNodeIndex = openingNodeIndex + 1;
 
         if (openingNodeIndex == -1)
@@ -590,7 +591,7 @@ public sealed partial class FormattedMessage : IEquatable<FormattedMessage>, IRe
             var node = _nodes[currentNodeIndex];
             currentNodeIndex++;
 
-            if (node.Name != tagText)
+            if (node.Name != tagName)
                 continue;
 
             if (node.Closing)
