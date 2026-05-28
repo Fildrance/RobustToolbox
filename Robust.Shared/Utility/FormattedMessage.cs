@@ -7,6 +7,7 @@ using System.Text;
 using JetBrains.Annotations;
 using Nett.Parser;
 using Robust.Shared.Maths;
+using Robust.Shared.RichText;
 using Robust.Shared.Serialization;
 
 namespace Robust.Shared.Utility;
@@ -15,9 +16,10 @@ namespace Robust.Shared.Utility;
 ///     Represents a formatted message in the form of a list of "tags".
 ///     Does not do any concrete formatting, simply useful as an API surface.
 /// </summary>
+/// <seealso cref="FormattedString"/>
 [PublicAPI]
 [Serializable, NetSerializable]
-public sealed partial class FormattedMessage : IReadOnlyList<MarkupNode>
+public sealed partial class FormattedMessage : IEquatable<FormattedMessage>, IReadOnlyList<MarkupNode>
 {
     public static FormattedMessage Empty => new();
 
@@ -130,6 +132,14 @@ public sealed partial class FormattedMessage : IReadOnlyList<MarkupNode>
     public static string EscapeText(string text)
     {
         return text.Replace("\\", "\\\\").Replace("[", "\\[");
+    }
+
+    /// <summary>
+    ///     Escape a string parameter value to be able to be formatted into markup.
+    /// </summary>
+    public static string EscapeStringParameter(string parameter)
+    {
+        return EscapeText(parameter).Replace("\"", "\\\"");
     }
 
     /// <summary>
@@ -618,6 +628,33 @@ public sealed partial class FormattedMessage : IReadOnlyList<MarkupNode>
     IEnumerator<MarkupNode> IEnumerable<MarkupNode>.GetEnumerator()
     {
         return GetEnumerator();
+    }
+
+    /// <inheritdoc />
+    public bool Equals(FormattedMessage? other)
+    {
+        if (_nodes.Count != other?._nodes.Count)
+            return false;
+
+        for (var i = 0; i < _nodes.Count; i++)
+        {
+            if (!_nodes[i].Equals(other?._nodes[i]))
+                return false;
+        }
+
+        return true;
+    }
+
+    /// <inheritdoc />
+    public override int GetHashCode()
+    {
+        var hash = 0;
+        foreach (var node in _nodes)
+        {
+            hash = HashCode.Combine(hash, node.GetHashCode());
+        }
+
+        return hash;
     }
 
     /// <returns>The string without markup tags.</returns>

@@ -18,7 +18,6 @@ using Robust.Shared.Graphics;
 using static Robust.Shared.GameObjects.OccluderComponent;
 using Robust.Shared.Utility;
 using TextureWrapMode = Robust.Shared.Graphics.TextureWrapMode;
-using Vector4 = Robust.Shared.Maths.Vector4;
 
 namespace Robust.Client.Graphics.Clyde
 {
@@ -98,9 +97,11 @@ namespace Robust.Client.Graphics.Clyde
         private LightCapacityComparer _lightCap = new();
         private ShadowCapacityComparer _shadowCap = new ShadowCapacityComparer();
 
+        private float _maxLightRadius;
+
         private unsafe void InitLighting()
         {
-
+            _cfg.OnValueChanged(CVars.MaxLightRadius, val => { _maxLightRadius = val;}, true);
 
             // Other...
             LoadLightingShaders();
@@ -450,6 +451,8 @@ namespace Robust.Client.Graphics.Clyde
             var lastPower = float.NaN;
             var lastColor = new Color(float.NaN, float.NaN, float.NaN, float.NaN);
             var lastSoftness = float.NaN;
+            var lastFalloff = float.NaN;
+            var lastCurveFactor = float.NaN;
             Texture? lastMask = null;
 
             using (_prof.Group("Draw Lights"))
@@ -501,6 +504,18 @@ namespace Robust.Client.Graphics.Clyde
                     {
                         lastSoftness = component.Softness;
                         lightShader.SetUniformMaybe("lightSoftness", lastSoftness);
+                    }
+
+                    if (!MathHelper.CloseToPercent(lastFalloff, component.Falloff))
+                    {
+                        lastFalloff = component.Falloff;
+                        lightShader.SetUniformMaybe("lightFalloff", lastFalloff);
+                    }
+
+                    if (!MathHelper.CloseToPercent(lastCurveFactor, component.CurveFactor))
+                    {
+                        lastCurveFactor = component.CurveFactor;
+                        lightShader.SetUniformMaybe("lightCurveFactor", lastCurveFactor);
                     }
 
                     lightShader.SetUniformMaybe("lightCenter", lightPos);
@@ -617,8 +632,9 @@ namespace Robust.Client.Graphics.Clyde
             // Use worldbounds for this one as we only care if the light intersects our actual bounds
             var xforms = _entityManager.GetEntityQuery<TransformComponent>();
             var state = (this, count: 0, shadowCastingCount: 0, xforms, worldAABB);
+            var lightAabb = worldAABB.Enlarged(_maxLightRadius);
 
-            foreach (var (uid, comp) in _lightTreeSystem.GetIntersectingTrees(map, worldAABB))
+            foreach (var (uid, comp) in _lightTreeSystem.GetIntersectingTrees(map, lightAabb))
             {
                 var bounds = _transformSystem.GetInvWorldMatrix(uid, xforms).TransformBox(worldBounds);
                 comp.Tree.QueryAabb(ref state, LightQuery, bounds);
