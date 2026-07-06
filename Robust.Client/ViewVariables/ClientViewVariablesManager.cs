@@ -278,7 +278,6 @@ namespace Robust.Client.ViewVariables
             session = null;
             return false;
         }
-
     }
 
     [Virtual]

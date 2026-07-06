@@ -4,6 +4,5 @@
     <OutputType>Exe</OutputType>
     <OutputPath>../bin/XmlDocTool</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-    <ImplicitUsings>enable</ImplicitUsings>
   </PropertyGroup>
 </Project>
