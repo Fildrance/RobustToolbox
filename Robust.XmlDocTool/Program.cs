@@ -9,16 +9,10 @@ using Robust.XmlDocTool;
 // the ViewVariables utility inside Robust games.
 //
 
-//
-// Not sure how I feel about these newfangled bare entrypoints 
-//
-// Main(string[] args)
-//
-
 if (args.Length == 0)
 {
     // give us a target string, idiot
-    Console.WriteLine("XmlDocTool - Needs folder or file path!");
+    Console.WriteLine("XmlDocTool - missing argument! Needs folder or file path!");
     return 1;
 }
 

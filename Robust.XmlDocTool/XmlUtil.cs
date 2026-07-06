@@ -3,7 +3,10 @@ using System.Xml;
 
 namespace Robust.XmlDocTool;
 
-public class XmlUtil
+/// <summary>
+/// Helper methods for interactions with xml nodes.
+/// </summary>
+public static class XmlUtil
 {
     public static bool TryGetChildNode(XmlNode node, string childName, [NotNullWhen(true)] out XmlNode? element)
     {
