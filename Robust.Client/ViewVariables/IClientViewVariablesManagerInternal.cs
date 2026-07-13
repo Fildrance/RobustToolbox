@@ -82,13 +82,14 @@ namespace Robust.Client.ViewVariables
         /// </summary>
         /// <param name="key"></param>
         /// <returns>DocString for the type or an error string</returns>
-        string GetDocStringForType(string key);
+        string GetDocStringForType(Type type);
 
         /// <summary>
         ///     Retrieve a DocString for a field or property definition matching the given key
         /// </summary>
+        /// <param name="ownerType"></param>
         /// <param name="key"></param>
         /// <returns>DocString for the field or property or an error string</returns>
-        string GetDocStringForFieldOrProperty(string key);
+        string GetDocStringForFieldOrProperty(Type ownerType, string key);
     }
 }

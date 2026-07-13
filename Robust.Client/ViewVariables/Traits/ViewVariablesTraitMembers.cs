@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Numerics;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
@@ -74,7 +74,7 @@ namespace Robust.Client.ViewVariables.Traits
                     {
                         var propertyEdit = new ViewVariablesPropertyControl(_vvm, _robustSerializer);
                         propertyEdit.SetStyle(otherStyle = !otherStyle);
-                        var editor = propertyEdit.SetProperty(propertyData, $"{groupName}.{propertyData.Name}");
+                        var editor = propertyEdit.SetProperty(propertyData, groupName, propertyData.Name);
 
                         var selectorChain = new object[] {new ViewVariablesMemberSelector(propertyData.PropertyIndex)};
                         editor.WireNetworkSelector(Instance.Session!.SessionId, selectorChain);

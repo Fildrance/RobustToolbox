@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -102,12 +102,9 @@ namespace Robust.Client.ViewVariables
                         Value = value
                     };
 
-                    string typeName = type.AssemblyQualifiedName!.Split(", ")[0];
-                    string fullName = $"{typeName}.{memberInfo.Name}";
-                    
                     var propertyEdit = new ViewVariablesPropertyControl(vvm, robustSerializer);
                     propertyEdit.SetStyle(styleOther = !styleOther);
-                    var editor = propertyEdit.SetProperty(data, fullName);
+                    var editor = propertyEdit.SetProperty(data, type, memberInfo.Name);
                     editor.OnValueChanged += onValueChanged;
                     return propertyEdit;
                 })

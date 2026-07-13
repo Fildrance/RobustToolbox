@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Numerics;
 using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
@@ -77,12 +77,21 @@ namespace Robust.Client.ViewVariables
             TopContainer.AddChild(NameLabel);
         }
 
-        public VVPropEditor SetProperty(ViewVariablesBlobMembers.MemberData member, string docStringKey)
+        public VVPropEditor SetProperty(ViewVariablesBlobMembers.MemberData member, string ownerTypeName, string fieldName)
+        {
+            var ownerType = Type.GetType(ownerTypeName);
+            return SetProperty(member, ownerType, fieldName);
+        }
+
+        public VVPropEditor SetProperty(ViewVariablesBlobMembers.MemberData member, Type? ownerType, string fieldName)
         {
             NameLabel.Text = member.Name;
             var type = member.Value?.GetType();
+            if (ownerType != null)
+            {
+                _middleLabel.Text = _viewVariablesManager.GetDocStringForFieldOrProperty(ownerType, fieldName);
+            }
 
-            _middleLabel.Text = _viewVariablesManager.GetDocStringForFieldOrProperty(docStringKey);
             _bottomLabel.Text = $"Type: {member.TypePretty}";
             var editor = _viewVariablesManager.PropertyFor(type);
 

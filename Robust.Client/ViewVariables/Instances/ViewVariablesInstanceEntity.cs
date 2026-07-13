@@ -215,8 +215,7 @@ namespace Robust.Client.ViewVariables.Instances
             foreach (var component in componentList)
             {
                 var ctype = component.GetType();
-                string typeName = ctype.AssemblyQualifiedName!.Split(", ")[0];
-                string docString = ViewVariablesManager.GetDocStringForType(typeName);
+                string docString = ViewVariablesManager.GetDocStringForType(ctype);
 
                 var button = new Button
                 {
@@ -274,7 +273,8 @@ namespace Robust.Client.ViewVariables.Instances
 
             foreach (var componentType in componentTypes)
             {
-                string docString = ViewVariablesManager.GetDocStringForType(componentType.FullName);
+                var type =Type.GetType(componentType.FullName);
+                string docString = type != null?ViewVariablesManager.GetDocStringForType(type) :string.Empty;
 
                 var button = new Button
                 {
@@ -548,7 +548,7 @@ namespace Robust.Client.ViewVariables.Instances
                 {
                     var propertyEdit = new ViewVariablesPropertyControl(ViewVariablesManager, _robustSerializer);
                     propertyEdit.SetStyle(otherStyle = !otherStyle);
-                    var editor = propertyEdit.SetProperty(propertyData, $"{groupName}.{propertyData.Name}");
+                    var editor = propertyEdit.SetProperty(propertyData, groupName, propertyData.Name);
                     var selectorChain = new object[] {new ViewVariablesMemberSelector(propertyData.PropertyIndex)};
                     editor.OnValueChanged += (o, r) => ViewVariablesManager.ModifyRemote(_entitySession, selectorChain, o, r);
                     editor.WireNetworkSelector(_entitySession.SessionId, selectorChain);
