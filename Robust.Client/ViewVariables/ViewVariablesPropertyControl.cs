@@ -77,19 +77,19 @@ namespace Robust.Client.ViewVariables
             TopContainer.AddChild(NameLabel);
         }
 
-        public VVPropEditor SetProperty(ViewVariablesBlobMembers.MemberData member, string ownerTypeName, string fieldName)
+        public VVPropEditor SetProperty(ViewVariablesBlobMembers.MemberData member, Type? ownerType, string fieldName)
         {
-            var ownerType = Type.GetType(ownerTypeName);
-            return SetProperty(member, ownerType, fieldName);
+            var ownerTypeName = ownerType?.AssemblyQualifiedName;
+            return SetProperty(member, ownerTypeName, fieldName);
         }
 
-        public VVPropEditor SetProperty(ViewVariablesBlobMembers.MemberData member, Type? ownerType, string fieldName)
+        public VVPropEditor SetProperty(ViewVariablesBlobMembers.MemberData member, string? ownerTypeName, string fieldName)
         {
             NameLabel.Text = member.Name;
             var type = member.Value?.GetType();
-            if (ownerType != null)
+            if (ownerTypeName != null)
             {
-                _middleLabel.Text = _viewVariablesManager.GetDocStringForFieldOrProperty(ownerType, fieldName);
+                _middleLabel.Text = _viewVariablesManager.GetDocStringForFieldOrProperty(ownerTypeName, fieldName);
             }
 
             _bottomLabel.Text = $"Type: {member.TypePretty}";

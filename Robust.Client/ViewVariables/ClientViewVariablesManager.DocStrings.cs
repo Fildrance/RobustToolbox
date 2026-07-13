@@ -10,7 +10,7 @@ namespace Robust.Client.ViewVariables
 {
     internal sealed partial class ClientViewVariablesManager
     {
-        private const string ViewVariablesResourcesRoot = "/ViewVariables/";
+        private const string ViewVariablesResourcesRoot = "/metadata/";
 
         private readonly Dictionary<string, string> _docStrings = new();
 
@@ -33,8 +33,8 @@ namespace Robust.Client.ViewVariables
         public sealed class FieldMetadata
         {
             public required string Name { get; set; }
-            public required string? Summary { get; set; }
-            public required string? ViewVariableSummary { get; set; }
+            public string? Summary { get; set; }
+            public string? ViewVariableSummary { get; set; }
         }
 
         public void LoadDocStrings()
@@ -49,7 +49,11 @@ namespace Robust.Client.ViewVariables
                 MetadataDocument? metadataDocument;
                 try
                 {
-                    metadataDocument = JsonSerializer.Deserialize<MetadataDocument>(resStream);
+                    var jsonSerializerOptions = new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    };
+                    metadataDocument = JsonSerializer.Deserialize<MetadataDocument>(resStream, jsonSerializerOptions);
                 }
                 catch (XmlException ex)
                 {
@@ -66,16 +70,16 @@ namespace Robust.Client.ViewVariables
                 foreach (var metadataSubject in metadataDocument.Metadata)
                 {
                     if(!string.IsNullOrWhiteSpace(metadataSubject.ViewVariableSummary))
-                        _docStrings.Add(metadataSubject.Name, metadataSubject.ViewVariableSummary);
+                        _docStrings.Add(metadataSubject.FullName, metadataSubject.ViewVariableSummary);
                     else if(!string.IsNullOrWhiteSpace(metadataSubject.Summary))
-                        _docStrings.Add(metadataSubject.Name, metadataSubject.Summary);
+                        _docStrings.Add(metadataSubject.FullName, metadataSubject.Summary);
 
                     foreach (var field in metadataSubject.Fields)
                     {
                         if (!string.IsNullOrWhiteSpace(field.ViewVariableSummary))
-                            _docStrings.Add(metadataSubject.Name + '.' + field.Name, field.ViewVariableSummary);
+                            _docStrings.Add(metadataSubject.FullName + '.' + field.Name, field.ViewVariableSummary);
                         else if (!string.IsNullOrWhiteSpace(field.Summary))
-                            _docStrings.Add(metadataSubject.Name + '.' + field.Name, field.Summary);
+                            _docStrings.Add(metadataSubject.FullName + '.' + field.Name, field.Summary);
                     }
                 }
             }
@@ -200,20 +204,21 @@ namespace Robust.Client.ViewVariables
             }
         }
 
-        public string GetDocStringForFieldOrProperty(Type ownerType, string key)
+        public string GetDocStringForFieldOrProperty(string ownerTypeName, string key)
         {
             // Will lumping fields and properties into the same search come back to bite us? Yes!
             // It's a problem for future someone to take care of. You'll have to make the server
             // send over a bool that toggles if we should look for a field or a property.
 
-            var ownerFullName = ownerType.AssemblyQualifiedName;
+            var ownerFullName = ownerTypeName;
+            if (!ownerFullName.StartsWith("global::"))
+            {
+                ownerFullName = "global::" + ownerFullName;
+            }
+
             if (_docStrings.TryGetValue(ownerFullName + '.' + key, out string? fieldDoc))
             {
                 return fieldDoc;
-            }
-            if (_docStrings.TryGetValue($"P:{key}", out string? propDoc))
-            {
-                return propDoc;
             }
             else
             {
