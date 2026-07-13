@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
+using System.Text.Json;
 using System.Xml;
 using Robust.Shared.Utility;
 
@@ -13,6 +14,22 @@ namespace Robust.Client.ViewVariables
 
         private readonly Dictionary<string, string> _docStrings = new();
 
+        public sealed class MetadataDocument
+        {
+            public required string Version { get; set; }
+            public required DateTime GeneratedAt { get; set; }
+            public required MetadataModel[] Components { get; set; } = [];
+            public required MetadataModel[] Commands { get; set; } = [];
+        }
+        public sealed class MetadataModel
+        {
+            public required string FullName { get; set; }
+            public required string Name { get; set; }
+            public required string Namespace { get; set; }
+            public required string AssemblyName { get; set; }
+            public string? Summary { get; set; }
+        }
+
         public void LoadDocStrings()
         {
             // todo: lots of clients (most clients actually) wont ever open VV so we
@@ -22,10 +39,10 @@ namespace Robust.Client.ViewVariables
             {
                 using var resStream = _resManager.ContentFileRead(resPath);
 
-                var xmlDoc = new XmlDocument();
+                MetadataDocument? metadataDocument;
                 try
                 {
-                    xmlDoc.Load(resStream);
+                    metadataDocument = JsonSerializer.Deserialize<MetadataDocument>(resStream);
                 }
                 catch (XmlException ex)
                 {
@@ -33,71 +50,18 @@ namespace Robust.Client.ViewVariables
                     continue;
                 }
 
-                if (!TryGetChildNode(xmlDoc, "doc", out var docNode))
+                if (metadataDocument == null)
                 {
-                    Sawmill.Warning($"DocString xml file at `{resPath}` lacks `doc` node!");
+                    Sawmill.Warning($"Metadata document {resPath} was improperly formatted - cannot read.");
                     continue;
                 }
 
-                if (!TryGetChildNode(docNode, "members", out var membersNode))
+                foreach (var component in metadataDocument.Components)
                 {
-                    Sawmill.Warning($"DocString xml file at `{resPath}` lacks `members` node!");
-                    continue;
-                }
-
-                foreach (XmlNode memberNode in membersNode.ChildNodes)
-                {
-                    // skips comment blocks, whitespace between elements
-                    if (memberNode.NodeType != XmlNodeType.Element)
-                        continue;
-
-                    DebugTools.Assert(memberNode.Name == "member");
-
-                    if (!TryGetAttributeText(memberNode, "name", out var memberName))
-                        continue;
-
-                    // skip method definitions
-                    if (memberName.StartsWith("M:"))
-                        continue;
-
-                    string docString;
-
-                    if (TryGetChildNode(memberNode, "viewvariables", out var viewVariablesNode))
-                    {
-                        var xmlString = ProcessDocNode(viewVariablesNode);
-                        docString = TrimLines(xmlString);
-                    }
-                    else if (TryGetChildNode(memberNode, "summary", out var summaryNode))
-                    {
-                        var xmlString = ProcessDocNode(summaryNode);
-                        docString = TrimLines(xmlString);
-                    }
-                    else
-                    {
-                        docString = "DocString is invalid.";
-                    }
-
-                    _docStrings.Add(memberName, docString);
+                    if(!string.IsNullOrWhiteSpace(component.Summary))
+                        _docStrings.Add(component.Name, component.Summary);
                 }
             }
-        }
-
-        private string ProcessDocNode(XmlNode xmlNode)
-        {
-            var sb = new StringBuilder();
-            foreach (XmlNode childNode in xmlNode.ChildNodes)
-            {
-                switch (childNode.NodeType)
-                {
-                    case XmlNodeType.Text:
-                        sb.Append(childNode.InnerText);
-                        break;
-                    case XmlNodeType.Element:
-                        ProcessXmlElement(childNode, sb);
-                        break;
-                }
-            }
-            return sb.ToString();
         }
 
         /// <summary>

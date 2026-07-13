@@ -12,9 +12,6 @@ public class MetadataCollection
     [JsonPropertyName("generatedAt")]
     public string GeneratedAt { get; set; } = DateTime.UtcNow.ToString("o");
 
-    [JsonPropertyName("components")]
-    public List<TypeMetadata> Components { get; set; } = new();
-
-    [JsonPropertyName("commands")]
-    public List<TypeMetadata> Commands { get; set; } = new();
+    [JsonPropertyName("metadata")]
+    public List<TypeMetadata> Metadata { get; set; } = new();
 }

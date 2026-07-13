@@ -7,7 +7,7 @@ public class TypeMetadata
 {
     [JsonPropertyName("kind")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? Kind { get; set; }
+    public required string Kind { get; set; }
 
     [JsonPropertyName("fullName")]
     public string FullName { get; set; } = "";
