@@ -313,9 +313,9 @@ internal abstract partial class ViewVariablesManager
         private partial struct ComplexDataStructure
         {
             // VV3 uses our serialization system internally, so this allows these values to be changed.
-            /// <viewvariables>
+            /// <ViewVariablesSummary>
             /// These comments come from the custom viewvariables tag.
-            /// </viewvariables>
+            /// </ViewVariablesSummary>
             [DataField]
             [ViewVariables]
             public int X;
@@ -323,9 +323,9 @@ internal abstract partial class ViewVariablesManager
             /// <summary>
             /// This text will be shown in your IDE but won't be shown in the VV window.
             /// </summary>
-            /// <viewvariables>
+            /// <ViewVariablesSummary>
             /// The viewvariables tag takes precidence over the summary tag in the VV window.
-            /// </viewvariables>
+            /// </ViewVariablesSummary>
             [DataField]
             [ViewVariables]
             public int Y;

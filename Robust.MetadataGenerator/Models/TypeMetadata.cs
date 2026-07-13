@@ -22,6 +22,10 @@ public class TypeMetadata
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Summary { get; set; }
 
+    [JsonPropertyName("viewVariablesSummary")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? ViewVariablesSummary { get; set; }
+
     [JsonPropertyName("seeAlso")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public List<string>? SeeAlso { get; set; }
@@ -35,14 +39,5 @@ public class TypeMetadata
     public List<string>? RelatedSystems { get; set; }
 
     [JsonPropertyName("fields")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public List<FieldMetadata> Fields { get; set; } = new();
-
-    [JsonPropertyName("properties")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public List<PropertyMetadata> Properties { get; set; } = new();
-
-    [JsonPropertyName("nestedTypes")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public List<TypeMetadata> NestedTypes { get; set; } = new();
 }

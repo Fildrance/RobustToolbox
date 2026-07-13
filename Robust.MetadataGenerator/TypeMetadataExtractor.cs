@@ -10,14 +10,17 @@ public static class TypeMetadataExtractor
     // ==================== Roslyn internals ====================
     public static TypeMetadata ExtractTypeMetadata(this INamedTypeSymbol typeSymbol, string kind)
     {
+        var doc = ParseDocumentation(typeSymbol);
+
         var typeInfo = new TypeMetadata
         {
             FullName = typeSymbol.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
             Name = typeSymbol.Name,
             Namespace = typeSymbol.ContainingNamespace?.ToDisplayString() ?? "",
             AssemblyName = typeSymbol.ContainingAssembly?.Name ?? "",
-            Summary = GetDocumentationSummary(typeSymbol),
-            SeeAlso = GetDocumentationSeeAlso(typeSymbol),
+            Summary = ElementText(doc, "summary"),
+            ViewVariablesSummary = ElementText(doc, "ViewVariablesSummary"),
+            SeeAlso = SeeAlsoRefs(doc),
             Kind = kind,
         };
 
@@ -27,38 +30,35 @@ public static class TypeMetadataExtractor
         {
             if (member is IFieldSymbol { DeclaredAccessibility: Accessibility.Public, IsConst: false, IsReadOnly: false } field)
             {
+                var fieldDoc = ParseDocumentation(field);
                 typeInfo.Fields.Add(new FieldMetadata
                 {
                     Name = field.Name,
                     Type = field.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
-                    Summary = GetDocumentationSummary(field),
-                    SeeAlso = GetDocumentationSeeAlso(field),
+                    Summary = ElementText(fieldDoc, "summary"),
+                    ViewVariablesSummary = ElementText(fieldDoc, "ViewVariablesSummary"),
+                    SeeAlso = SeeAlsoRefs(fieldDoc),
                 });
             }
             else if (member is IPropertySymbol { DeclaredAccessibility: Accessibility.Public, IsReadOnly: false, IsWriteOnly: false } prop)
             {
-                typeInfo.Properties.Add(new PropertyMetadata
+                var propDoc = ParseDocumentation(prop);
+                typeInfo.Fields.Add(new FieldMetadata()
                 {
                     Name = prop.Name,
                     Type = prop.Type.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat),
-                    Summary = GetDocumentationSummary(prop),
-                    SeeAlso = GetDocumentationSeeAlso(prop),
+                    Summary = ElementText(propDoc, "summary"),
+                    ViewVariablesSummary = ElementText(propDoc, "ViewVariablesSummary"),
+                    SeeAlso = SeeAlsoRefs(propDoc),
                 });
             }
         }
-
-        var nestedInfo = typeSymbol.GetTypeMembers()
-            .Select(nestedType => ExtractTypeMetadata(nestedType, "related"))
-            .Where(nestedInfo => !string.IsNullOrEmpty(nestedInfo.Summary) || nestedInfo.Fields.Count > 0 ||
-                                 nestedInfo.Properties.Count > 0);
-        typeInfo.NestedTypes.AddRange(nestedInfo);
-
 
         ExtractRelatedSystems(typeSymbol, typeInfo);
         return typeInfo;
     }
 
-    private static string? GetDocumentationSummary(ISymbol symbol)
+    private static System.Xml.Linq.XDocument? ParseDocumentation(ISymbol symbol)
     {
         var xmlDoc = symbol.GetDocumentationCommentXml();
         if (string.IsNullOrEmpty(xmlDoc))
@@ -66,42 +66,41 @@ public static class TypeMetadataExtractor
 
         try
         {
-            var doc = System.Xml.Linq.XDocument.Parse(xmlDoc);
-            var summary = doc.Root?.Element("summary")?.Value;
-            if (summary != null)
-            {
-                summary = System.Xml.XmlConvert.DecodeName(summary);
-                summary = summary.Trim();
-                return string.IsNullOrEmpty(summary) ? null : summary;
-            }
+            return System.Xml.Linq.XDocument.Parse(xmlDoc);
         }
-        catch { }
-        return null;
+        catch
+        {
+            return null;
+        }
     }
 
-    private static List<string>? GetDocumentationSeeAlso(ISymbol symbol)
+    private static string? ElementText(System.Xml.Linq.XDocument? doc, string elementName)
     {
-        var xmlDoc = symbol.GetDocumentationCommentXml();
-        if (string.IsNullOrEmpty(xmlDoc))
+        var value = doc?.Root?.Element(elementName)?.Value;
+        if (value == null)
             return null;
 
-        try
+        value = System.Xml.XmlConvert.DecodeName(value);
+        value = value.Trim();
+        return string.IsNullOrEmpty(value) ? null : value;
+    }
+
+    private static List<string>? SeeAlsoRefs(System.Xml.Linq.XDocument? doc)
+    {
+        if (doc == null)
+            return null;
+
+        var refs = new List<string>();
+        foreach (var seeEl in doc.Descendants("see").Concat(doc.Descendants("seealso")))
         {
-            var doc = System.Xml.Linq.XDocument.Parse(xmlDoc);
-            var refs = new List<string>();
-            foreach (var seeEl in doc.Descendants("see").Concat(doc.Descendants("seealso")))
-            {
-                var cref = seeEl.Attribute("cref")?.Value;
-                if (!string.IsNullOrEmpty(cref))
-                    refs.Add(cref);
-                var href = seeEl.Attribute("href")?.Value;
-                if (!string.IsNullOrEmpty(href) && !refs.Contains(href))
-                    refs.Add(href);
-            }
-            return refs.Count > 0 ? refs : null;
+            var cref = seeEl.Attribute("cref")?.Value;
+            if (!string.IsNullOrEmpty(cref))
+                refs.Add(cref);
+            var href = seeEl.Attribute("href")?.Value;
+            if (!string.IsNullOrEmpty(href) && !refs.Contains(href))
+                refs.Add(href);
         }
-        catch { }
-        return null;
+        return refs.Count > 0 ? refs : null;
     }
 
     private static void ExtractAccessReferences(INamedTypeSymbol typeSymbol, TypeMetadata typeInfo)
@@ -126,7 +125,8 @@ public static class TypeMetadataExtractor
                 {
                     if (element.Kind == TypedConstantKind.Type)
                     {
-                        var typeName = element.Type?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+                        //var typeName = element.Type?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat); - returns just Object.Type
+                        var typeName = element.Value?.ToString();
                         if (!string.IsNullOrEmpty(typeName))
                             accessRefs.Add(new AccessReference { TargetType = typeName, Access = "ReadWrite" });
                     }

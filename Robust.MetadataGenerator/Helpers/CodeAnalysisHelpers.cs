@@ -1,5 +1,6 @@
 using Microsoft.CodeAnalysis;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace Robust.MetadataGenerator.Helpers;
 
@@ -52,5 +53,22 @@ public static class CodeAnalysisHelpers
         }
 
         return false;
+    }
+
+    /// <summary>
+    /// Checks if a symbol has an attribute with the given name (matching by short name or metadata name).
+    /// </summary>
+    public static bool HasAttribute(this ISymbol symbol, string attributeName)
+    {
+        return symbol.GetAttributes()
+            .Any(a =>
+        {
+            var className = a.AttributeClass?.Name;
+            var metadataName = a.AttributeClass?.ToDisplayString(SymbolDisplayFormat.FullyQualifiedFormat);
+
+            return className == attributeName
+                   || metadataName == attributeName
+                   || metadataName == $"global::{attributeName}";
+        });
     }
 }

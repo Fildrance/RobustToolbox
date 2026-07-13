@@ -15,6 +15,10 @@ public class FieldMetadata
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public string? Summary { get; set; }
 
+    [JsonPropertyName("viewVariablesSummary")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? ViewVariablesSummary { get; set; }
+
     [JsonPropertyName("seeAlso")]
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     public List<string>? SeeAlso { get; set; }
