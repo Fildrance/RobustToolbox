@@ -43,6 +43,13 @@ internal sealed class RingBufferList<T> : IList<T>
         _write = NextIndex(_write);
     }
 
+    public int AddAndGetIndex(T item)
+    {
+        var index = _write;
+        Add(item);
+        return index;
+    }
+
     public void Clear()
     {
         _read = 0;

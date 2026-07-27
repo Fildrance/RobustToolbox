@@ -129,25 +129,25 @@ namespace Robust.Client.UserInterface.Controls
             _scrollBar.MaxValue = Math.Max(_scrollBar.Page, _totalContentHeight);
         }
 
-        public void AddText(string text)
+        public Index AddText(string text)
         {
             var msg = new FormattedMessage();
             msg.AddText(text);
-            AddMessage(msg);
+            return AddMessage(msg);
         }
 
-        public void AddMessage(FormattedMessage message, Color? defaultColor = null)
+        public Index AddMessage(FormattedMessage message, Color? defaultColor = null)
         {
-            AddMessage(message, RichTextEntry.DefaultTags, defaultColor);
+            return AddMessage(message, RichTextEntry.DefaultTags, defaultColor);
         }
 
-        public void AddMessage(FormattedMessage message, Type[]? tagsAllowed, Color? defaultColor = null)
+        public Index AddMessage(FormattedMessage message, Type[]? tagsAllowed, Color? defaultColor = null)
         {
             var entry = new RichTextEntry(message, this, _tagManager, tagsAllowed, defaultColor);
 
             entry.Update(_tagManager, _getFont(), _getContentBox().Width, UIScale);
 
-            _entries.Add(entry);
+            var index = _entries.AddAndGetIndex(entry);
             var font = _getFont();
             AddNewItemHeight(font, entry);
 
@@ -156,6 +156,8 @@ namespace Robust.Client.UserInterface.Controls
             {
                 _scrollBar.MoveToEnd();
             }
+
+            return index;
         }
 
         public void SetMessage(Index index, FormattedMessage message, Color? defaultColor = null)
