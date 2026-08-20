@@ -102,25 +102,18 @@ namespace Robust.Client.Graphics.Clyde
 
             _windowingThread = Thread.CurrentThread;
 
-            // Default to SDL3 on ARM64. GLFW is not feature complete there (lacking file dialog implementation)
-            if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
-                _cfg.SetCVar(CVars.DisplayWindowingApi, "sdl3");
-
             var windowingApi = _cfg.GetCVar(CVars.DisplayWindowingApi);
             IWindowingImpl winImpl;
 
             switch (windowingApi)
             {
-                case "glfw":
-                    winImpl = new GlfwWindowingImpl(this, _deps);
-                    break;
                 case "sdl3":
                     winImpl = new Sdl3WindowingImpl(this, _deps);
                     break;
                 default:
                     _logManager.GetSawmill("clyde.win").Log(
-                        LogLevel.Error, "Unknown windowing API: {name}. Falling back to GLFW.", windowingApi);
-                    goto case "glfw";
+                        LogLevel.Error, "Unknown windowing API: {name}. Falling back to SDL3.", windowingApi);
+                    goto case "sdl3";
             }
 
             _windowing = winImpl;
@@ -297,6 +290,19 @@ namespace Robust.Client.Graphics.Clyde
             _windowing!.WindowSetMonitor(_mainWindow!, monitor);
         }
 
+        public IClydeMonitor? GetMainWindowMonitor()
+        {
+            return GetWindowMonitor(_mainWindow!.Owner!);
+        }
+
+        public IClydeMonitor? GetWindowMonitor(IClydeWindow window)
+        {
+            DebugTools.AssertNotNull(_windowing);
+
+            var reg = ((WindowHandle)window).Reg;
+            return _windowing!.WindowGetMonitor(reg);
+        }
+
         public void RequestWindowAttention()
         {
             DebugTools.AssertNotNull(_windowing);
@@ -354,15 +360,17 @@ namespace Robust.Client.Graphics.Clyde
                 _windowHandles.Add(reg.Handle);
 
                 var rtId = AllocRid();
+                var renderTarget = new RenderWindow(this, rtId);
                 _renderTargets.Add(rtId, new LoadedRenderTarget
                 {
                     Size = reg.FramebufferSize,
                     IsWindow = true,
                     WindowId = reg.Id,
-                    IsSrgb = true
+                    IsSrgb = true,
+                    Instance = new WeakReference<RenderTargetBase>(renderTarget),
                 });
 
-                reg.RenderTarget = new RenderWindow(this, rtId);
+                reg.RenderTarget = renderTarget;
 
                 _glContext!.WindowCreated(glSpec, reg);
             }
@@ -405,10 +413,17 @@ namespace Robust.Client.Graphics.Clyde
             _glContext?.SwapAllBuffers();
         }
 
-        private void VSyncChanged(bool newValue)
+        public bool VsyncEnabled
         {
-            _vSync = newValue;
-            _glContext?.UpdateVSync();
+            get => _vSync;
+            set
+            {
+                if (_vSync == value)
+                    return;
+
+                _vSync = value;
+                _glContext?.UpdateVSync();
+            }
         }
 
         private void WindowModeChanged(int mode)
@@ -554,6 +569,13 @@ namespace Robust.Client.Graphics.Clyde
 
             public Vector2 ContentScale => Reg.WindowScale;
 
+            public void SetRelativeMouseMode(bool enabled)
+            {
+                DebugTools.AssertNotNull(_clyde._windowing);
+
+                _clyde._windowing!.WindowSetRelativeMouseMode(Reg, enabled);
+            }
+
             public bool DisposeOnClose
             {
                 get => Reg.DisposeOnClose;
@@ -597,6 +619,11 @@ namespace Robust.Client.Graphics.Clyde
                 DebugTools.AssertNotNull(_clyde._windowing);
 
                 _clyde._windowing!.TextInputStop(Reg);
+            }
+
+            public void SetWindowProgress(WindowProgressState state, float value)
+            {
+                _clyde._windowing!.WindowSetProgress(Reg, state, value);
             }
 
             public nint? WindowsHWnd => _clyde._windowing!.WindowGetWin32Window(Reg);
