@@ -35,6 +35,13 @@ namespace Robust.Client.UserInterface
         public readonly FormattedMessage Message;
 
         /// <summary>
+        ///     A stable identifier that consumers can use to look this entry back up after it has been added
+        ///     to an <see cref="OutputPanel"/>, even as other entries are removed and indices shift.
+        ///     <see cref="Guid.Empty"/> when unused (e.g. debug console output).
+        /// </summary>
+        public readonly Guid MessageId;
+
+        /// <summary>
         ///     The vertical size of this entry, in pixels.
         /// </summary>
         public int Height;
@@ -52,6 +59,23 @@ namespace Robust.Client.UserInterface
         public readonly Dictionary<int, Control>? Controls;
 
 
+        /// <summary>
+        ///     Creates an entry solely for <see cref="MessageId"/>-based equality lookups
+        ///     (e.g. <see cref="OutputPanel.TryFindEntry"/>). All other fields are left empty/default
+        ///     and must not be accessed on the result.
+        /// </summary>
+        internal RichTextEntry(Guid messageId)
+        {
+            MessageId = messageId;
+            Message = FormattedMessage.Empty;
+            Height = 0;
+            Width = 0;
+            LineBreaks = default;
+            _defaultColor = default;
+            _tagsAllowed = null;
+            Controls = null;
+        }
+
         public RichTextEntry(
             FormattedMessage message,
             Control parent,
@@ -61,9 +85,10 @@ namespace Robust.Client.UserInterface
             // RichTextEntry constructor but with DefaultTags
         }
 
-        public RichTextEntry(FormattedMessage message, Control parent, MarkupTagManager tagManager, Type[]? tagsAllowed, Color? defaultColor = null)
+        public RichTextEntry(FormattedMessage message, Control parent, MarkupTagManager tagManager, Type[]? tagsAllowed, Color? defaultColor = null, Guid messageId = default)
         {
             Message = message;
+            MessageId = messageId;
             Height = 0;
             Width = 0;
             LineBreaks = default;
@@ -380,6 +405,27 @@ namespace Robust.Client.UserInterface
         {
             var height = font.GetLineHeight(uiScale);
             return (int)(height * lineHeightScale);
+        }
+    }
+
+    /// <summary>
+    ///     Equality comparer for <see cref="RichTextEntry"/> that compares entries by
+    ///     <see cref="RichTextEntry.MessageId"/> only, ignoring all other fields. This lets
+    ///     <see cref="OutputPanel"/> resolve entries by their stable identifier without relying on
+    ///     <see cref="RichTextEntry"/>'s default equality semantics.
+    /// </summary>
+    internal sealed class RichTextEntryIdComparer : IEqualityComparer<RichTextEntry>
+    {
+        public static readonly RichTextEntryIdComparer Instance = new();
+
+        public bool Equals(RichTextEntry x, RichTextEntry y)
+        {
+            return x.MessageId == y.MessageId;
+        }
+
+        public int GetHashCode(RichTextEntry obj)
+        {
+            return obj.MessageId.GetHashCode();
         }
     }
 }

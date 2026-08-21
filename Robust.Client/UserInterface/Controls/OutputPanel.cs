@@ -129,6 +129,18 @@ namespace Robust.Client.UserInterface.Controls
             _scrollBar.MaxValue = Math.Max(_scrollBar.Page, _totalContentHeight);
         }
 
+        /// <summary>
+        ///     Tries to find the current index of the entry with the given <see cref="RichTextEntry.MessageId"/>.
+        ///     This is used to resolve a previously-added entry by its stable identifier, even after
+        ///     other entries have been removed and indices have shifted.
+        /// </summary>
+        public bool TryFindEntry(Guid id, out int index)
+        {
+            // Comparison is done by the MessageId comparer; the lookup needle only carries the id.
+            index = _entries.IndexOf(new RichTextEntry(id), RichTextEntryIdComparer.Instance);
+            return index >= 0;
+        }
+
         public void AddText(string text)
         {
             var msg = new FormattedMessage();
@@ -141,9 +153,9 @@ namespace Robust.Client.UserInterface.Controls
             AddMessage(message, RichTextEntry.DefaultTags, defaultColor);
         }
 
-        public void AddMessage(FormattedMessage message, Type[]? tagsAllowed, Color? defaultColor = null)
+        public void AddMessage(FormattedMessage message, Type[]? tagsAllowed, Color? defaultColor = null, Guid messageId = default)
         {
-            var entry = new RichTextEntry(message, this, _tagManager, tagsAllowed, defaultColor);
+            var entry = new RichTextEntry(message, this, _tagManager, tagsAllowed, defaultColor, messageId);
 
             entry.Update(_tagManager, _getFont(), _getContentBox().Width, UIScale);
 
@@ -171,7 +183,7 @@ namespace Robust.Client.UserInterface.Controls
             _totalContentHeight -= oldEntry.Height + font.GetLineSeparation(UIScale);
             _scrollBar.MaxValue = Math.Max(_scrollBar.Page, _totalContentHeight);
 
-            var entry = new RichTextEntry(message, this, _tagManager, tagsAllowed, defaultColor);
+            var entry = new RichTextEntry(message, this, _tagManager, tagsAllowed, defaultColor, oldEntry.MessageId);
             entry.Update(_tagManager, _getFont(), _getContentBox().Width, UIScale);
             _entries[index] = entry;
 

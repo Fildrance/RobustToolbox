@@ -102,10 +102,17 @@ internal sealed class RingBufferList<T> : IList<T>
 
     public int IndexOf(T item)
     {
+        return IndexOf(item, null);
+    }
+
+    public int IndexOf(T item, IEqualityComparer<T>? comparer)
+    {
+        comparer ??= EqualityComparer<T>.Default;
+
         var i = 0;
         foreach (var containedItem in this)
         {
-            if (EqualityComparer<T>.Default.Equals(item, containedItem))
+            if (comparer.Equals(item, containedItem))
                 return i;
 
             i += 1;

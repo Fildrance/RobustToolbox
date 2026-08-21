@@ -92,4 +92,43 @@ internal sealed class RingBufferListTest
 
         Assert.That(list, Is.EquivalentTo(new[] {1, 2, 3, 5}));
     }
+
+    [Test]
+    public void TestIndexOfWithComparer()
+    {
+        var id = Guid.NewGuid();
+        var list = new RingBufferList<EntryWithIdForTest>
+        {
+            new() { Id = Guid.NewGuid(), Payload = 1 },
+            new() { Id = id, Payload = 2 },
+            new() { Id = Guid.NewGuid(), Payload = 3 }
+        };
+
+        Assert.Multiple(() =>
+        {
+            Assert.That(list.IndexOf(new EntryWithIdForTest { Id = id, Payload = 999 }, EntryWithIdComparerForTest.Instance), Is.EqualTo(1));
+            Assert.That(list.IndexOf(new EntryWithIdForTest { Id = Guid.NewGuid() }, EntryWithIdComparerForTest.Instance), Is.EqualTo(-1));
+        });
+    }
+
+    private struct EntryWithIdForTest
+    {
+        public Guid Id;
+        public int Payload;
+    }
+
+    private sealed class EntryWithIdComparerForTest : IEqualityComparer<EntryWithIdForTest>
+    {
+        public static readonly EntryWithIdComparerForTest Instance = new();
+
+        public bool Equals(EntryWithIdForTest x, EntryWithIdForTest y)
+        {
+            return x.Id == y.Id;
+        }
+
+        public int GetHashCode(EntryWithIdForTest obj)
+        {
+            return obj.Id.GetHashCode();
+        }
+    }
 }
