@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Numerics;
 using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
@@ -19,6 +19,8 @@ namespace Robust.Client.ViewVariables
         public BoxContainer TopContainer { get; }
         public BoxContainer BottomContainer { get; }
         public Label NameLabel { get; }
+
+        private readonly Label _middleLabel;
 
         private readonly Label _bottomLabel;
 
@@ -52,16 +54,21 @@ namespace Robust.Client.ViewVariables
 
             BottomContainer = new BoxContainer
             {
-                Orientation = LayoutOrientation.Horizontal,
+                Orientation = LayoutOrientation.Vertical,
                 Visible = false
             };
             VBox.AddChild(BottomContainer);
 
             //var smallFont = new VectorFont(_resourceCache.GetResource<FontResource>("/EngineFonts/NotoSans/NotoSans-Regular.ttf"), 10);
 
+            _middleLabel = new Label
+            {
+                FontColorOverride = Color.DarkGray,
+            };
+            BottomContainer.AddChild(_middleLabel);
+
             _bottomLabel = new Label
             {
-                //    FontOverride = smallFont,
                 FontColorOverride = Color.DarkGray
             };
             BottomContainer.AddChild(_bottomLabel);
@@ -70,10 +77,20 @@ namespace Robust.Client.ViewVariables
             TopContainer.AddChild(NameLabel);
         }
 
-        public VVPropEditor SetProperty(ViewVariablesBlobMembers.MemberData member)
+        public VVPropEditor SetProperty(ViewVariablesBlobMembers.MemberData member, Type? ownerType, string fieldName)
+        {
+            var ownerTypeName = ownerType?.AssemblyQualifiedName;
+            return SetProperty(member, ownerTypeName, fieldName);
+        }
+
+        public VVPropEditor SetProperty(ViewVariablesBlobMembers.MemberData member, string? ownerTypeName, string fieldName)
         {
             NameLabel.Text = member.Name;
             var type = member.Value?.GetType();
+            if (ownerTypeName != null)
+            {
+                _middleLabel.Text = _viewVariablesManager.GetDocStringForFieldOrProperty(ownerTypeName, fieldName);
+            }
 
             _bottomLabel.Text = $"Type: {member.TypePretty}";
             var editor = _viewVariablesManager.PropertyFor(type);

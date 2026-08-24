@@ -1,0 +1,75 @@
+<!--
+MSBuild targets for generating component/command metadata on publish builds.
+
+Integrates with the publish pipeline to generate JSON metadata files containing:
+- All types derived from Component or ToolshedCommand
+- Their XML documentation summaries
+  - For commands, related system references
+- All public fields/properties with their XML doc summaries
+- Nested model types (recursive)
+
+Usage:
+  <PropertyGroup>
+    <GenerateMetadata>true</GenerateMetadata>
+    <MetadataOutputPath>relative/or/absolute/path</MetadataOutputPath>
+  </PropertyGroup>
+-->
+
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+  <!--
+  Default metadata output path - relative to the solution/project root.
+  Can be overridden by setting $(MetadataOutputPath) property.
+  -->
+  <PropertyGroup Condition="'$(MetadataOutputPath)' == ''">
+    <MetadataOutputPath>release/metadata.json</MetadataOutputPath>
+  </PropertyGroup>
+
+  <!--
+  Target to build the MetadataGenerator tool first.
+  Triggered before any project that needs it.
+  -->
+  <Target Name="BuildMetadataGenerator" BeforeTargets="GenerateComponentMetadata">
+    <MSBuild
+      Projects="$(MSBuildThisFileDirectory)..\Robust.MetadataGenerator\Robust.MetadataGenerator.csproj"
+      Targets="Build"
+      Properties="Configuration=$(Configuration)"
+      Condition="'$(FullRelease)' == 'True' Or '$(GenerateMetadata)' == 'true'" />
+  </Target>
+
+  <!--
+  Main target to generate metadata after all projects are built.
+  Runs the MetadataGenerator with the --assemblies flag pointing to the output directory.
+  -->
+  <Target Name="GenerateComponentMetadata"
+          AfterTargets="Build"
+          Condition="'$(GenerateMetadata)' == 'true' Or '$(FullRelease)' == 'True'">
+
+    <!-- Determine the assemblies directory -->
+    <PropertyGroup>
+      <_MetadataAssembliesDir Condition="'$(_MetadataAssembliesDir)' == ''">$(OutputPath)</_MetadataAssembliesDir>
+      <_MetadataGeneratorPath>$([MSBuild]::NormalizePath('$(MSBuildThisFileDirectory)..\bin\MetadataGenerator\Robust.MetadataGenerator'))</_MetadataGeneratorPath>
+    </PropertyGroup>
+
+    <Message Text="Generating component/command metadata from: $(_MetadataAssembliesDir)" Importance="high" />
+    <Message Text="Output file: $(MetadataOutputPath)" Importance="high" />
+
+    <Exec Command="&quot;$(_MetadataGeneratorPath)&quot; --assemblies &quot;$(_MetadataAssembliesDir)&quot; &quot;$(MetadataOutputPath)&quot;"
+          ContinueOnError="true" />
+  </Target>
+
+  <!--
+  For the packaging pipeline - generate metadata from the Content.Packaging publish output.
+  This should be invoked after all assemblies have been published.
+  -->
+  <Target Name="GenerateMetadataFromPublishOutput"
+          Condition="'$(GenerateMetadata)' == 'true' And '$(PublishDir)' != ''">
+    <PropertyGroup>
+      <_MetadataGeneratorPath>$([MSBuild]::NormalizePath('$(MSBuildThisFileDirectory)..\bin\MetadataGenerator\Robust.MetadataGenerator'))</_MetadataGeneratorPath>
+    </PropertyGroup>
+
+    <Exec Command="&quot;$(_MetadataGeneratorPath)&quot; --assemblies &quot;$(PublishDir)&quot; &quot;$(MetadataOutputPath)&quot;"
+          ContinueOnError="true" />
+  </Target>
+
+</Project>

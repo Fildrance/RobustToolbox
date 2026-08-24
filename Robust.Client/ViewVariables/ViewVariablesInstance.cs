@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -104,7 +104,7 @@ namespace Robust.Client.ViewVariables
 
                     var propertyEdit = new ViewVariablesPropertyControl(vvm, robustSerializer);
                     propertyEdit.SetStyle(styleOther = !styleOther);
-                    var editor = propertyEdit.SetProperty(data);
+                    var editor = propertyEdit.SetProperty(data, type, memberInfo.Name);
                     editor.OnValueChanged += onValueChanged;
                     return propertyEdit;
                 })
@@ -113,7 +113,7 @@ namespace Robust.Client.ViewVariables
             return groupedSorted;
         }
 
-        protected static Control MakeTopBar(string top, string bottom)
+        protected static Control MakeTopBar(string top, string middle, string bottom)
         {
             if (top == bottom)
             {
@@ -124,20 +124,28 @@ namespace Robust.Client.ViewVariables
             //    new VectorFont(IoCManager.Resolve<IResourceCache>().GetResource<FontResource>("/EngineFonts/NotoSans/NotoSans-Regular.ttf"),
             //        10);
 
-            // Custom ToString() implementation.
-            var headBox = new BoxContainer
-            {
+            var headBox = new BoxContainer {
                 Orientation = LayoutOrientation.Vertical,
                 SeparationOverride = 0
             };
-            headBox.AddChild(new Label {Text = top, ClipText = true});
-            headBox.AddChild(new Label
-            {
-                Text = bottom,
-            //    FontOverride = smallFont,
+
+            headBox.AddChild(new Label {
+                Text = top,
+                ClipText = true
+            });
+
+            headBox.AddChild(new Label {
+                Text = middle,
                 FontColorOverride = Color.DarkGray,
                 ClipText = true
             });
+
+            headBox.AddChild(new Label {
+                Text = bottom,
+                FontColorOverride = Color.DarkGray,
+                ClipText = true
+            });
+
             return headBox;
         }
     }

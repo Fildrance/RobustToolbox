@@ -145,4 +145,5 @@
     <BuildType Solution="DebugOpt|*" Project="Debug" />
     <BuildType Solution="Tools|*" Project="Release" />
   </Project>
+  <Project Path="Robust.XmlDocTool/Robust.XmlDocTool.csproj" />
 </Solution>
